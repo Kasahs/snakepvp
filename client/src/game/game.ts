@@ -1,7 +1,20 @@
 import * as net from './networking';
 
-function initNetworking(){
-    net.connectTestChannel();    
+
+function keyDownHandler(e:KeyboardEvent){
+    /* TODO ignore all no game keydowns */
+    net.emitClientControls(e);
+    // TODO doCanvasPaintForClient();
 }
 
-export {initNetworking};
+
+function peerControlsHandler(event){
+    // TODO doCanvasPaintForPeers();
+}
+
+
+function start(){
+    document.addEventListener('keydown', keyDownHandler);
+    net.setPeerControlsHandler(peerControlsHandler);
+    net.init();
+}
