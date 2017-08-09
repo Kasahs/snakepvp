@@ -1,5 +1,5 @@
-
-import * as io from 'socket.io-client'
+import * as io from 'socket.io-client';
+import * as $ from 'jquery';
 
 const NAMESPACES = {
     TEST: '/test',
@@ -7,17 +7,20 @@ const NAMESPACES = {
 }
 
 const GLOBAL_EVENTS = {
-    LOG: 'log'
+    LOG: 'log',
+    ROOM: 'room'
 }
 
 
-function initTestChannel(nsp:string=NAMESPACES.TEST){
+function initTestChannel(roomName=null, nsp:string=NAMESPACES.TEST){
     const socket = io(nsp) 
     socket.on(GLOBAL_EVENTS.LOG, function (data) {
         console.log(data)
         //TODO change this event name and make it easier to find remove hard coded strings
         socket.emit('my other event', { my: 'data' })
-    })
+    });
+
+    socket.emit(GLOBAL_EVENTS.ROOM, {roomName: roomName});
 
     return socket
 }
@@ -57,7 +60,7 @@ function setPeerControlsHandler(handler){
  * Initialize the controls relay namespace socket io connection.
  * @param nsp namespace of the channel
  */
-function initControlsChannel(nsp=NAMESPACES.CONTORLS){
+function initControlsChannel(roomName=null, nsp=NAMESPACES.CONTORLS){
 
     // start socket io connection with namespace
     controlsChannel = io(nsp)
@@ -65,6 +68,9 @@ function initControlsChannel(nsp=NAMESPACES.CONTORLS){
         console.log(data)
 
     })
+
+    controlsChannel.emit(GLOBAL_EVENTS.ROOM, {roomName: roomName});
+
 
     controlsChannel.on(EVENTS.CONTROLS, HANDLERS.peerControlsHandler)
     
@@ -85,9 +91,40 @@ function emitClientControls(event:KeyboardEvent){
     controlsChannel.emit(EVENTS.CONTROLS, event)
 }
 
-function init(){
-    initTestChannel();
-    initControlsChannel();
+/**
+ * a method that makes and http request to check if room with given name is available
+ * @param roomName name of the rame user wants
+ */
+function getRoom(roomName:string): Promise<any>{
+    var promise = new Promise(function(resolve, reject){
+        $.get('/api/getroom?room=' + roomName).done(function(res){
+            console.log(res);
+            if (res.status === 200){
+                resolve(res.data);
+            }
+        }, function(res){
+            reject(res);
+        })
+    });
+    
+    
+    return promise;
+}
+
+function init(roomName){
+    initTestChannel(roomName);
+    initControlsChannel(roomName);
+    /* TODO check room availability */
+    /* getRoom(roomName).then(function(data:any){
+        let roomName = null, roomUrl = null;
+        roomName = data.roomName || roomName;
+        roomUrl = data.roomUrl || roomUrl;
+        initTestChannel(roomName);
+        initControlsChannel(roomName);
+    }, function(data){
+        console.error('Could not join a room, can not initialize game');
+    }); */
+    
 }
 
 export {

@@ -41,7 +41,7 @@ function openTestChannel(server, nsp=NAMESPACE.TEST) {
 // Simply relay all data from a single method and let clients handle controls
 function openControlsRelayChannel(server, nsp=NAMESPACE.CONTROLS_RELAY) {
     const EVENTS = {
-        CONTROLS_INPUT: 'controls-input'
+        CONTROLS: 'controls'
     }
     const socket = io(server).of(nsp);
 
@@ -50,7 +50,7 @@ function openControlsRelayChannel(server, nsp=NAMESPACE.CONTROLS_RELAY) {
             message: 'ControlsRelayConnection Established', 
             nsp: nsp 
         })
-        socket.on(EVENTS.CONTROLS_INPUT, function (data) {
+        socket.on(EVENTS.CONTROLS, function (data) {
             socket.broadcast.emit(data);
         });
     });
