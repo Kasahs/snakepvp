@@ -12,11 +12,12 @@ const GLOBAL_EVENTS = {
 }
 
 
-function initTestChannel(roomName=null, nsp:string=NAMESPACES.TEST) {
+const initTestChannel = (roomName=null, nsp:string=NAMESPACES.TEST) => {
     const socket = io(nsp)
-    socket.on(GLOBAL_EVENTS.LOG, function (data) {
+    socket.on(GLOBAL_EVENTS.LOG, (data) => {
         console.log(data)
-        //TODO change this event name and make it easier to find remove hard coded strings
+        //TODO change this event name
+        // make it easier to find remove hard coded strings
         socket.emit('my other event', { my: 'data' })
     })
     socket.emit(GLOBAL_EVENTS.ROOM, {roomName: roomName})
@@ -36,7 +37,7 @@ const EVENTS = {
  * All subsequent HANDLERS will also be added to this obj
  */
 const HANDLERS = {
-    peerControlsHandler: function(data){
+    peerControlsHandler: (data) => {
         console.log('recieved controls input')
         console.dir(data)
     }
@@ -45,10 +46,10 @@ const HANDLERS = {
 let controlsChannel:SocketIOClient.Socket = null
 
 /**
- * set the handler which will respond to controls input recieved from other players(peers)
+ * set handler for responding to input recieved from other players(peers)
  * @param handler
  */
-function setPeerControlsHandler(handler) {
+const setPeerControlsHandler = (handler) => {
     if (handler instanceof Function) {
         HANDLERS.peerControlsHandler = handler
     }
@@ -58,11 +59,11 @@ function setPeerControlsHandler(handler) {
  * Initialize the controls relay namespace socket io connection.
  * @param nsp namespace of the channel
  */
-function initControlsChannel(roomName=null, nsp=NAMESPACES.CONTORLS) {
+const initControlsChannel = (roomName=null, nsp=NAMESPACES.CONTORLS) => {
 
     // start socket io connection with namespace
     controlsChannel = io(nsp)
-    controlsChannel.on(GLOBAL_EVENTS.LOG, function(data){
+    controlsChannel.on(GLOBAL_EVENTS.LOG, (data) => {
         console.log(data)
 
     })
@@ -80,26 +81,28 @@ function initControlsChannel(roomName=null, nsp=NAMESPACES.CONTORLS) {
  * emit user's controls to server
  * @param event Keyboard event for controls pressed by user
  */
-function emitClientControls(event:KeyboardEvent) {
+const emitClientControls = (event:KeyboardEvent) => {
     if (controlsChannel == null) {
-        throw new Error('controlsChannel Not Initialized - please call init before emitClientControls is called.')
+        let errMsg = `controlsChannel Not Initialized
+         - please call init before emitClientControls is called.`
+        throw new Error(errMsg)
     }
 
     controlsChannel.emit(EVENTS.CONTROLS, event)
 }
 
 /**
- * a method that makes and http request to check if room with given name is available
+ * to confirm if room with given name is available
  * @param roomName name of the rame user wants
  */
-function getRoom(roomName:string): Promise<any> {
-    let promise = new Promise(function(resolve, reject){
-        $.get('/api/getroom?room=' + roomName).done(function(res){
+const getRoom = (roomName:string): Promise<any> => {
+    let promise = new Promise( (resolve, reject) => {
+        $.get('/api/getroom?room=' + roomName).done((res) => {
             console.log(res)
             if (res.status === 200) {
                 resolve(res.data)
             }
-        }, function(res){
+        }, (res) => {
             reject(res)
         })
     })
@@ -107,7 +110,7 @@ function getRoom(roomName:string): Promise<any> {
     return promise
 }
 
-function init(roomName) {
+const init = (roomName) => {
     initTestChannel(roomName)
     initControlsChannel(roomName)
     /* TODO check room availability */
@@ -133,4 +136,3 @@ export {
     emitClientControls,
     init
 }
-

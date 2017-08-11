@@ -1,19 +1,20 @@
 import * as net from './networking'
+import 'window'
+import 'document'
 
-
-function keyDownHandler(e:KeyboardEvent) {
+const keyDownHandler = (e:KeyboardEvent) => {
     /* TODO ignore all no game keydowns */
     net.emitClientControls(e)
     // TODO doCanvasPaintForClient();
 }
 
 
-function peerControlsHandler(event) {
+const peerControlsHandler = (event) => {
     // TODO doCanvasPaintForPeers();
 }
 
 
-function start() {
+const start = () => {
     document.addEventListener('keydown', keyDownHandler)
 
     /* net.init will fail without this handler */
@@ -28,7 +29,7 @@ function start() {
         let el:Element =  document.querySelector('.create-room-wizard')
         let createRoomBtn = el.querySelector('.create-room.btn')
         el.setAttribute('style', 'display:block')
-        createRoomBtn.addEventListener('click', function(e:MouseEvent){
+        createRoomBtn.addEventListener('click', (e:MouseEvent) => {
             let roomNameEl:Element = el.querySelector('.room-name')
             let roomName:string = roomNameEl.getAttribute('val') || null
             if (!isNullUndifinedOrEmptyString(roomName)) {
@@ -48,7 +49,7 @@ function start() {
     /* TODO handle case where init fails due to unavailability of room name */
 }
 
-function isNullUndifinedOrEmptyString(str:string) {
+const isNullUndifinedOrEmptyString = (str:string) => {
     if (str === null || str === undefined || str === "") {
         return true
     } else {return false}

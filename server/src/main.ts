@@ -17,7 +17,7 @@ app.set('views', settings.VIEWS_DIR)
 app.use('/dist', express.static(settings.CLIENT_DIR))
 
 
-app.get('/', function getAppShell(req, res) {
+app.get('/', (req, res) => {
   res.render('index')
 })
 
@@ -25,11 +25,11 @@ const NAMESPACE = {
   TEST: '/test'
 }
 
-function openTestConnection() {
+const openTestConnection = () => {
   const socket = io(server).of('/test')
-  socket.on('connection', function (socket) {
+  socket.on('connection', (socket) => {
     socket.emit('news', { hello: 'world' })
-    socket.on('my other event', function (data) {
+    socket.on('my other event', (data) => {
       console.log(data)
     })
   })
