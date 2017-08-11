@@ -1,3 +1,3 @@
-import * as game from './game/index';
+import * as game from './game/index'
 
-game.initNetworking();
+game.initNetworking()

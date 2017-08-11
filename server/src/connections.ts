@@ -10,7 +10,8 @@ const NAMESPACE = {
 };
 
 const GLOBAL_EVENTS = {
-    LOG: 'log'
+    LOG: 'log',
+    ROOM: 'room'
 };
 
 /* 
@@ -25,14 +26,18 @@ const CONTROLS = {
 */
 
 function openTestChannel(server, nsp=NAMESPACE.TEST) {
-    const socket = io(server).of(nsp);
-    socket.on('connection', function (socket) {
+    const socketManager = io(server).of(nsp);
+    socketManager.on('connection', function (socket) {
         socket.emit(GLOBAL_EVENTS.LOG, { 
             message: 'TestConnection Established', 
             nsp: nsp 
-        })
+        });
         socket.on('my other event', function (data) {
-            console.log(data);
+            console.log(data)
+        });
+
+        socket.on(GLOBAL_EVENTS.ROOM, function(data){
+            socket.join(data.roomName)
         });
     });
 
