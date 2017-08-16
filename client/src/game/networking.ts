@@ -1,5 +1,6 @@
 import * as io from 'socket.io-client'
 import * as $ from 'jquery'
+import { PlayerControl } from 'common-entity/player-control'
 
 const NAMESPACES = {
     TEST: '/test',
@@ -8,7 +9,8 @@ const NAMESPACES = {
 
 const GLOBAL_EVENTS = {
     LOG: 'log',
-    ROOM: 'room'
+    ROOM: 'room',
+    PEERS: 'peers'
 }
 
 
@@ -29,7 +31,7 @@ const initTestChannel = (roomName=null, nsp:string=NAMESPACES.TEST) => {
  * All Events required for pvp
  */
 const EVENTS = {
-    CONTROLS: 'controls'
+    CONTROLS: 'controls',
 }
 
 /**
@@ -37,9 +39,14 @@ const EVENTS = {
  * All subsequent HANDLERS will also be added to this obj
  */
 const HANDLERS = {
-    peerControlsHandler: (data) => {
+    peerControlsHandler: (control:PlayerControl) => {
         console.log('recieved controls input')
-        console.dir(data)
+        console.dir(control)
+    },
+
+    peerConnectionHandler: (peers:string[]) => {
+        console.log('recieved list of peers')
+        console.dir(peers)
     }
 }
 
@@ -49,10 +56,12 @@ let controlsChannel:SocketIOClient.Socket = null
  * set handler for responding to input recieved from other players(peers)
  * @param handler
  */
-const setPeerControlsHandler = (handler) => {
-    if (handler instanceof Function) {
-        HANDLERS.peerControlsHandler = handler
-    }
+const setPeerControlsHandler = (handler: (e:PlayerControl) => any) => {
+    HANDLERS.peerControlsHandler = handler
+}
+
+const setPeerConnectionHandler = (handler: (peers:string[]) => any) => {
+    HANDLERS.peerControlsHandler
 }
 
 /**
@@ -60,21 +69,35 @@ const setPeerControlsHandler = (handler) => {
  * @param nsp namespace of the channel
  */
 const initControlsChannel = (roomName=null, nsp=NAMESPACES.CONTORLS) => {
-
     // start socket io connection with namespace
-    controlsChannel = io(nsp)
+    // TODO do proper error handling
+    try {
+        controlsChannel = io(nsp)
+    } catch(e) {
+        console.log(e)
+    }
     controlsChannel.on(GLOBAL_EVENTS.LOG, (data) => {
         console.log(data)
 
     })
 
     controlsChannel.emit(GLOBAL_EVENTS.ROOM, {roomName: roomName})
+    controlsChannel.on(GLOBAL_EVENTS.PEERS, (data) => {
+        HANDLERS.peerConnectionHandler(data.peers)
+    })
 
 
     controlsChannel.on(EVENTS.CONTROLS, HANDLERS.peerControlsHandler)
 
     return controlsChannel
 
+}
+
+const enum CONTROLS {
+    LEFT = 37,
+    UP = 38,
+    RIGHT = 39,
+    DOWN = 40
 }
 
 /**
@@ -84,11 +107,21 @@ const initControlsChannel = (roomName=null, nsp=NAMESPACES.CONTORLS) => {
 const emitClientControls = (event:KeyboardEvent) => {
     if (controlsChannel == null) {
         let errMsg = `controlsChannel Not Initialized
-         - please call init before emitClientControls is called.`
+         - please call net.init before emitClientControls is called.`
         throw new Error(errMsg)
     }
 
-    controlsChannel.emit(EVENTS.CONTROLS, event)
+    let validKeys:number[] = [
+        CONTROLS.UP, CONTROLS.LEFT,
+        CONTROLS.RIGHT, CONTROLS.DOWN
+    ]
+    // do somethingonly if keypress is valid
+    if (validKeys.indexOf(event.keyCode) > -1) {
+        console.log(event)
+        let control = new PlayerControl(event.keyCode, event.code)
+        controlsChannel.emit(EVENTS.CONTROLS, control)
+    }
+
 }
 
 /**
@@ -111,7 +144,7 @@ const getRoom = (roomName:string): Promise<any> => {
 }
 
 const init = (roomName) => {
-    initTestChannel(roomName)
+    // initTestChannel(roomName)
     initControlsChannel(roomName)
     /* TODO check room availability */
     /* getRoom(roomName).then(function(data:any){
@@ -132,6 +165,7 @@ export {
     initTestChannel,
     controlsChannel,
     setPeerControlsHandler,
+    setPeerConnectionHandler,
     initControlsChannel,
     emitClientControls,
     init

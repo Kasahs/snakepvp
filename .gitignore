@@ -59,3 +59,7 @@ typings/
 
 # vscode editor config files
 .vscode/
+
+# distribution files
+server/dist/
+client/dist/

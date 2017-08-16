@@ -3,7 +3,11 @@
         "target": "es2015",
         "module": "commonjs",
         "sourceMap": true,
-        "jsx": "react"
+        "jsx": "react",
+        "baseUrl": "src",
+        "paths": {
+            "common-entity/*": ["../../common-entity/*"]
+        }
     },
     "exclude": [
         "node_modules"

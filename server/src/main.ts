@@ -3,6 +3,7 @@ import * as io from 'socket.io'
 import * as http from 'http'
 import * as ejs from 'ejs'
 import * as settings from './settings'
+import * as conn from './connections'
 
 
 const app = express()
@@ -21,22 +22,8 @@ app.get('/', (req, res) => {
   res.render('index')
 })
 
-const NAMESPACE = {
-  TEST: '/test'
-}
-
-const openTestConnection = () => {
-  const socket = io(server).of('/test')
-  socket.on('connection', (socket) => {
-    socket.emit('news', { hello: 'world' })
-    socket.on('my other event', (data) => {
-      console.log(data)
-    })
-  })
-
-}
-
-openTestConnection()
+conn.openTestChannel(server)
+conn.openControlsRelayChannel(server)
 server.listen(9999)
 console.log('Snakepvp server running at:')
 console.dir(server.address())

@@ -4,12 +4,16 @@
         "target": "es5",
         "noImplicitAny": false,
         
-        "sourceMap": false,
+        "sourceMap": true,
         "newLine": "LF",
         "declaration": true,
         //"allowSyntheticDefaultImports": true
         //"emitDecoratorMetadata": true,
-        "experimentalDecorators": true    
+        "experimentalDecorators": true    ,
+        "baseUrl": "src",
+        "paths": {
+            "common-entity/*": ["../../common-entity/*"]
+        }
     },
     "include": [
         "src/**/*"

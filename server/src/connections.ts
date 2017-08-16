@@ -1,22 +1,23 @@
 import * as io from 'socket.io'
+import {PlayerControl} from 'common-entity/player-control'
 
 /**
  * TODO make a common module for these settings
  * so that they can be shared between client and server side code
  */
 
-const NAMESPACE = {
+export const NAMESPACE = {
     TEST: '/test',
     CONTROLS_RELAY: '/controls-relay'
 }
 
-const GLOBAL_EVENTS = {
+export const GLOBAL_EVENTS = {
     LOG: 'log',
     ROOM: 'room'
 }
 
 
-const openTestChannel = (server, nsp=NAMESPACE.TEST) => {
+export const openTestChannel = (server, nsp=NAMESPACE.TEST) => {
     const socketManager = io(server).of(nsp)
     socketManager.on('connection', (socket) => {
         socket.emit(GLOBAL_EVENTS.LOG, {
@@ -40,10 +41,11 @@ const openTestChannel = (server, nsp=NAMESPACE.TEST) => {
  * @param server NodeHttp server to attach to
  * @param nsp Namespace to connect to
  */
-const openControlsRelayChannel =
+export const openControlsRelayChannel =
     (server, nsp:string=NAMESPACE.CONTROLS_RELAY) => {
     const EVENTS = {
-        CONTROLS: 'controls'
+        CONTROLS: 'controls',
+        PEER_CONTROLS: 'peer-controls'
     }
     const socketManager = io(server).of(nsp)
 
@@ -56,15 +58,19 @@ const openControlsRelayChannel =
         socket.on(GLOBAL_EVENTS.ROOM, (data) => {
             socket.join(data.roomName, (error) => {
                 if(!error) {
-                    socketManager.clients((error, clients) => {
-                        socket.emit('peers', {peers: clients})
+                    socketManager.clients((error, clients:string[]) => {
+                        socket.broadcast.emit('peers', {peers: clients})
                     })
                 }
             })
         })
 
-        socket.on(EVENTS.CONTROLS, (data) => {
-            socket.broadcast.emit(data)
+        socket.on(EVENTS.CONTROLS, (control: PlayerControl) => {
+            console.log('got keydown:')
+            console.log(control)
+            socket.broadcast.emit(EVENTS.CONTROLS, control)
         })
     })
 }
+
+

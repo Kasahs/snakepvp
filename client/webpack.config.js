@@ -3,6 +3,12 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 
 const pugPlugin = new HtmlWebPackPlugin({template: './src/index.pug', inject: true});
 
+// This helper function is not strictly necessary.
+// I just don't like repeating the path.join a dozen times.
+function srcPath(subdir) {
+    return path.join(__dirname, "src", subdir);
+}
+
 module.exports = {
     entry: './src/app.ts',
     output: {
@@ -17,7 +23,10 @@ module.exports = {
 
     resolve: {
         // Add `.ts` and `.tsx` as a resolvable extension.
-        extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js']
+        extensions: ['.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+        alias: {
+            "common-entity": srcPath('../../common-entity')
+        }
     },
 
     module: {

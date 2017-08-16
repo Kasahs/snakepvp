@@ -1,39 +1,51 @@
 import * as net from './networking'
-import 'window'
-import 'document'
+import { PlayerControl } from "common-entity/player-control"
 
 const keyDownHandler = (e:KeyboardEvent) => {
-    /* TODO ignore all no game keydowns */
+    /* TODO ignore all non game keydowns */
+    console.log(e)
     net.emitClientControls(e)
     // TODO doCanvasPaintForClient();
 }
 
 
-const peerControlsHandler = (event) => {
+const peerControlsHandler = (control: PlayerControl) => {
     // TODO doCanvasPaintForPeers();
+    console.log('peerControlsHandler:')
+    console.log(control)
+}
+
+
+const peerConnectionHandler = (peers:string[]) => {
+    // TODO
+    console.log('peerConnectionHandler')
 }
 
 
 const start = () => {
-    document.addEventListener('keydown', keyDownHandler)
+
 
     /* net.init will fail without this handler */
     net.setPeerControlsHandler(peerControlsHandler)
+    net.setPeerConnectionHandler(peerConnectionHandler)
     /**
      * when URL already has a room name automatically join that room.
      * If not show create room wizard and wait for correct input
      */
     if (!isNullUndifinedOrEmptyString(window.location.hash)) {
         net.init(window.location.hash)
+        document.addEventListener('keydown', keyDownHandler)
     } else {
         let el:Element =  document.querySelector('.create-room-wizard')
         let createRoomBtn = el.querySelector('.create-room.btn')
         el.setAttribute('style', 'display:block')
         createRoomBtn.addEventListener('click', (e:MouseEvent) => {
-            let roomNameEl:Element = el.querySelector('.room-name')
-            let roomName:string = roomNameEl.getAttribute('val') || null
+            let roomNameEl:HTMLInputElement =
+                <HTMLInputElement>el.querySelector('.room-name')
+            let roomName:string = roomNameEl.value || null
             if (!isNullUndifinedOrEmptyString(roomName)) {
                 net.init(roomName)
+                document.addEventListener('keydown', keyDownHandler)
             } else {
                 console.error('Room name cannot be empty')
             }
@@ -54,3 +66,5 @@ const isNullUndifinedOrEmptyString = (str:string) => {
         return true
     } else {return false}
 }
+
+export {start}

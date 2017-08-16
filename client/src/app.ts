@@ -1,3 +1,5 @@
 import * as game from './game/index'
 
-game.initNetworking()
+window.onload = () => {
+    game.start()
+}
