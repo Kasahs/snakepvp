@@ -32,8 +32,9 @@ const start = () => {
      * when URL already has a room name automatically join that room.
      * If not show create room wizard and wait for correct input
      */
-    if (!isNullUndifinedOrEmptyString(window.location.hash)) {
-        net.init(window.location.hash)
+    if (window.location.hash) {
+        // remove the # in front
+        net.init(window.location.hash.slice(1))
         document.addEventListener('keydown', keyDownHandler)
     } else {
         let el:Element =  document.querySelector('.create-room-wizard')

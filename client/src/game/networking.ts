@@ -93,12 +93,6 @@ const initControlsChannel = (roomName=null, nsp=NAMESPACES.CONTORLS) => {
 
 }
 
-const enum CONTROLS {
-    LEFT = 37,
-    UP = 38,
-    RIGHT = 39,
-    DOWN = 40
-}
 
 /**
  * emit user's controls to server
@@ -111,12 +105,8 @@ const emitClientControls = (event:KeyboardEvent) => {
         throw new Error(errMsg)
     }
 
-    let validKeys:number[] = [
-        CONTROLS.UP, CONTROLS.LEFT,
-        CONTROLS.RIGHT, CONTROLS.DOWN
-    ]
-    // do somethingonly if keypress is valid
-    if (validKeys.indexOf(event.keyCode) > -1) {
+    // do something only if keycode is valid
+    if (PlayerControl.isValidKeycode(event.keyCode)) {
         console.log(event)
         let control = new PlayerControl(event.keyCode, event.code)
         controlsChannel.emit(EVENTS.CONTROLS, control)
@@ -126,7 +116,7 @@ const emitClientControls = (event:KeyboardEvent) => {
 
 /**
  * to confirm if room with given name is available
- * @param roomName name of the rame user wants
+ * @param roomName name of the name user wants
  */
 const getRoom = (roomName:string): Promise<any> => {
     let promise = new Promise( (resolve, reject) => {
