@@ -11,6 +11,7 @@ export const NAMESPACE = {
     CONTROLS_RELAY: '/controls-relay'
 }
 
+
 export const GLOBAL_EVENTS = {
     LOG: 'log',
     ROOM: 'room',
@@ -24,6 +25,7 @@ export const ERRORS = {
 
 export const openTestChannel = (server, nsp = NAMESPACE.TEST) => {
     const socketManager = io(server).of(nsp)
+
     socketManager.on('connection', (socket) => {
         socket.emit(GLOBAL_EVENTS.LOG, {
             message: 'TestConnection Established',
@@ -37,7 +39,6 @@ export const openTestChannel = (server, nsp = NAMESPACE.TEST) => {
             socket.join(data.roomName)
         })
     })
-
 }
 
 /**

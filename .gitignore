@@ -57,7 +57,9 @@ typings/
 # dotenv environment variables file
 .env
 
-# vscode editor config files
+# editor config files
+*.sublime-project
+*.sublime-workspace
 .vscode/
 
 # distribution files
