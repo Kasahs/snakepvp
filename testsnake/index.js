@@ -24,11 +24,11 @@ function drawEgg(egg, size, context) {
 	context.fillRect(egg.pos.x, egg.pos.y, size, size)	
 }
 
-function getNewEgg(){
+function getNewEgg(area){
 	var temp = Math.floor(Math.random() * 1000)
-	var x = (temp)%450 - ((temp)%450)%10
+	var x = (temp)%area - ((temp)%area)%10
 	temp = Math.floor(Math.random() * 1000)
-	var y = (temp)%450 - ((temp)%450)%10
+	var y = (temp)%area - ((temp)%area)%10
 
 	return {
 		pos: {
@@ -39,6 +39,7 @@ function getNewEgg(){
 }
 
 var createGame = (canvas, context, eggs, snake) => {
+	var gameOn = false
 	var stopLoop = false
 	
 	function start(time){
@@ -48,6 +49,7 @@ var createGame = (canvas, context, eggs, snake) => {
 			return null
 		}
 		else {
+			gameOn = true
 			context.save()
 			context.clearRect(0, 0, canvas.width, canvas.height)
 			eggs.forEach((egg) => {
@@ -60,7 +62,7 @@ var createGame = (canvas, context, eggs, snake) => {
 					y: snake.cubes[snake.cubes.length - 1].py,
 				})
 				eggs.pop();
-				eggs.push(getNewEgg())
+				eggs.push(getNewEgg(canvas.width))
 				
 			}
 
@@ -77,12 +79,18 @@ var createGame = (canvas, context, eggs, snake) => {
 	}
 
 	function stop(){
+		gameOn = false
 		stopLoop = true
+	}
+
+	function isGameOn(){
+		return gameOn
 	}
 
 	return {
 		start: start,
-		stop: stop
+		stop: stop,
+		isOn: isGameOn
 	}
 	
 
@@ -103,12 +111,20 @@ function isEggEaten(eggs, snake){
 function startSnakeMovement(snake, canvas){
 	snake.cubes[0].px = snake.cubes[0].x
 	snake.cubes[0].py = snake.cubes[0].y
-	snake.cubes[0].x += snake.vector.i * snake.size
-	snake.cubes[0].y += snake.vector.j * snake.size
-	if (snake.cubes[0].x > canvas.width) snake.cubes[0].x = 0;
-	if (snake.cubes[0].x < 0) snake.cubes[0].x = canvas.width;
-	if (snake.cubes[0].y > canvas.height) snake.cubes[0].y = 0;
-	if (snake.cubes[0].y < 0 ) snake.cubes[0].y = canvas.height;
+	
+	if (snake.cubes[0].x > canvas.width - snake.size) {
+		snake.cubes[0].x = 0 
+	} else if (snake.cubes[0].x < 0) {
+		console.log(snake)
+		snake.cubes[0].x = canvas.width - snake.size
+	} else if (snake.cubes[0].y > canvas.height - snake.size) {
+		snake.cubes[0].y = 0
+	} else if (snake.cubes[0].y < 0 ) {
+		snake.cubes[0].y = canvas.height - snake.size
+	} else {
+		snake.cubes[0].x += snake.vector.i * snake.size
+		snake.cubes[0].y += snake.vector.j * snake.size
+	}
 
 	for (var itr = 0; itr < snake.cubes.length; itr++){
 		if (itr != 0) {
@@ -120,13 +136,28 @@ function startSnakeMovement(snake, canvas){
 	}
 }
 
+function isImpossibleMove(keyCode, snake){
+	if(keyCode == KEYCODES.UP && snake.vector.j === 1){
+		return true
+	}
+	if(keyCode == KEYCODES.DOWN && snake.vector.j === -1){
+		return true
+	}
+	if(keyCode == KEYCODES.LEFT && snake.vector.i === 1){
+		return true
+	}
+	if(keyCode == KEYCODES.RIGHT && snake.vector.i === -1){
+		return true
+	}
+
+	return false
+}
+
 
 window.onload = function () {
 	var canvas = document.querySelector('.mah-canvas')
 	var context = canvas.getContext('2d')
 
-	var GAMESTART = false
-	
 	var snake = {
 		cubes: [
 			{x: 100, y: 0, px: 90, py: 0},
@@ -142,7 +173,7 @@ window.onload = function () {
 			{x: 0, y:0, px: 0, py: 0}
 		],
 
-		speed: 60,
+		speed: 120,
 
 		vector: {
 			i: 0,
@@ -161,29 +192,37 @@ window.onload = function () {
 	}]
 
 
-	
 	window.Game = createGame(canvas, context, eggs, snake)
-	window.Game.start();
-	
+
 	document.addEventListener('keydown', (e) => {
-		if(e.keyCode == KEYCODES.UP) snake.vector.i = 0, snake.vector.j = -1
+		if(e.keyCode == KEYCODES.UP && !isImpossibleMove(e.keyCode, snake)) {
+			snake.vector.i = 0, snake.vector.j = -1
+		}
 		
-		if(e.keyCode == KEYCODES.LEFT) snake.vector.i = -1, snake.vector.j = 0
+		if(e.keyCode == KEYCODES.LEFT && !isImpossibleMove(e.keyCode, snake)) {
+			snake.vector.i = -1, snake.vector.j = 0
+		}
 
-		if(e.keyCode == KEYCODES.DOWN) snake.vector.i = 0, snake.vector.j = 1
+		if(e.keyCode == KEYCODES.DOWN && !isImpossibleMove(e.keyCode, snake)) {
+			snake.vector.i = 0, snake.vector.j = 1
+		}
+			
 
-		if(e.keyCode == KEYCODES.RIGHT) snake.vector.i = 1, snake.vector.j = 0
+		if(e.keyCode == KEYCODES.RIGHT && !isImpossibleMove(e.keyCode, snake)) {
+			snake.vector.i = 1, snake.vector.j = 0
+		}
 
-		if (VALID_KEYS.includes(e.keyCode)){
-			GAMESTART = true
+		if (VALID_KEYS.includes(e.keyCode) && !Game.isOn()){
+			
+			window.Game.start();
+			
+			var snakeControlLoop = setInterval(() => {
+				startSnakeMovement(snake, canvas);
+			}, snake.speed)
 		}
 	})
 
-	var snakeControlLoop = setInterval(() => {
-		if (GAMESTART) {
-			startSnakeMovement(snake, canvas);
-		}
-	}, snake.speed)
+	
 	
 	
 
