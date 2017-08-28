@@ -98,9 +98,10 @@ var createGame = (canvas, context, eggs, snake) => {
 
 function isEggEaten(eggs, snake){
 	var detected = false
+	var snakeHead = snake.cubes[0]
 	eggs.forEach((egg) => {
-		if (snake.cubes[0].x == egg.pos.x && 
-			snake.cubes[0].y == egg.pos.y){
+		if (snakeHead.x == egg.pos.x && 
+			snakeHead.y == egg.pos.y){
 			detected = true
 		}
 	})
@@ -108,50 +109,38 @@ function isEggEaten(eggs, snake){
 	return detected
 }
 
-function snakeAteSelf(snake){
-	var detected = false
+
+function moveSnakeWhileAlive(snake, canvas){
 	var snakeHead = snake.cubes[0]
-	for (var i = 0; i < snake.cubes.length; i++) {
-		if (i !== 0) {
-			if (snake.cubes[i].x === snakeHead.x && 
-				snake.cubes[i].y === snakeHead.y) {
-				return true	
-			}
-		}
-	}
-	return false
-}
-
-function startSnakeMovement(snake, canvas){
-	if (!snakeAteSelf(snake)){
-		snake.cubes[0].px = snake.cubes[0].x
-		snake.cubes[0].py = snake.cubes[0].y
-		
-		if (snake.cubes[0].x > canvas.width - snake.size) {
-			snake.cubes[0].x = 0 
-		} else if (snake.cubes[0].x < 0) {
-			snake.cubes[0].x = canvas.width - snake.size
-		} else if (snake.cubes[0].y > canvas.height - snake.size) {
-			snake.cubes[0].y = 0
-		} else if (snake.cubes[0].y < 0) {
-			snake.cubes[0].y = canvas.height - snake.size
-		} else {
-			snake.cubes[0].x += snake.vector.i * snake.size
-			snake.cubes[0].y += snake.vector.j * snake.size
-		}
-
-		for (var itr = 0; itr < snake.cubes.length; itr++){
-			if (itr != 0) {
-				snake.cubes[itr].px = snake.cubes[itr].x
-				snake.cubes[itr].py = snake.cubes[itr].y
-				snake.cubes[itr].x = snake.cubes[itr - 1].px
-				snake.cubes[itr].y = snake.cubes[itr - 1].py
-			}	
-		}	
-	} else {
-		window.Game.stop()
-	}
+	snakeHead.px = snakeHead.x
+	snakeHead.py = snakeHead.y
 	
+	if (snakeHead.x > canvas.width - snake.size) {
+		snakeHead.x = 0 
+	} else if (snakeHead.x < 0) {
+		snakeHead.x = canvas.width - snake.size
+	} else if (snakeHead.y > canvas.height - snake.size) {
+		snakeHead.y = 0
+	} else if (snakeHead.y < 0) {
+		snakeHead.y = canvas.height - snake.size
+	} else {
+		snakeHead.x += snake.vector.i * snake.size
+		snakeHead.y += snake.vector.j * snake.size
+	}
+
+	for (var itr = 0; itr < snake.cubes.length; itr++){
+		if (itr != 0) {
+			snake.cubes[itr].px = snake.cubes[itr].x
+			snake.cubes[itr].py = snake.cubes[itr].y
+			snake.cubes[itr].x = snake.cubes[itr - 1].px
+			snake.cubes[itr].y = snake.cubes[itr - 1].py
+			if (snake.cubes[itr].x === snakeHead.x && 
+				snake.cubes[itr].y === snakeHead.y) {
+				return false	
+			}
+		}	
+	}
+	return true
 }
 
 function isImpossibleMove(keyCode, snake){
@@ -235,7 +224,11 @@ window.onload = function () {
 			window.Game.start();
 			
 			var snakeControlLoop = setInterval(() => {
-				startSnakeMovement(snake, canvas);
+				var isSnakeAlive = moveSnakeWhileAlive(snake, canvas);
+				if(!isSnakeAlive){
+					window.Game.stop()
+					window.clearInterval(snakeControlLoop)
+				}
 			}, snake.speed)
 		}
 	})
