@@ -108,32 +108,50 @@ function isEggEaten(eggs, snake){
 	return detected
 }
 
-function startSnakeMovement(snake, canvas){
-	snake.cubes[0].px = snake.cubes[0].x
-	snake.cubes[0].py = snake.cubes[0].y
-	
-	if (snake.cubes[0].x > canvas.width - snake.size) {
-		snake.cubes[0].x = 0 
-	} else if (snake.cubes[0].x < 0) {
-		console.log(snake)
-		snake.cubes[0].x = canvas.width - snake.size
-	} else if (snake.cubes[0].y > canvas.height - snake.size) {
-		snake.cubes[0].y = 0
-	} else if (snake.cubes[0].y < 0 ) {
-		snake.cubes[0].y = canvas.height - snake.size
-	} else {
-		snake.cubes[0].x += snake.vector.i * snake.size
-		snake.cubes[0].y += snake.vector.j * snake.size
+function snakeAteSelf(snake){
+	var detected = false
+	var snakeHead = snake.cubes[0]
+	for (var i = 0; i < snake.cubes.length; i++) {
+		if (i !== 0) {
+			if (snake.cubes[i].x === snakeHead.x && 
+				snake.cubes[i].y === snakeHead.y) {
+				return true	
+			}
+		}
 	}
+	return false
+}
 
-	for (var itr = 0; itr < snake.cubes.length; itr++){
-		if (itr != 0) {
-			snake.cubes[itr].px = snake.cubes[itr].x
-			snake.cubes[itr].py = snake.cubes[itr].y
-			snake.cubes[itr].x = snake.cubes[itr - 1].px
-			snake.cubes[itr].y = snake.cubes[itr - 1].py
+function startSnakeMovement(snake, canvas){
+	if (!snakeAteSelf(snake)){
+		snake.cubes[0].px = snake.cubes[0].x
+		snake.cubes[0].py = snake.cubes[0].y
+		
+		if (snake.cubes[0].x > canvas.width - snake.size) {
+			snake.cubes[0].x = 0 
+		} else if (snake.cubes[0].x < 0) {
+			snake.cubes[0].x = canvas.width - snake.size
+		} else if (snake.cubes[0].y > canvas.height - snake.size) {
+			snake.cubes[0].y = 0
+		} else if (snake.cubes[0].y < 0) {
+			snake.cubes[0].y = canvas.height - snake.size
+		} else {
+			snake.cubes[0].x += snake.vector.i * snake.size
+			snake.cubes[0].y += snake.vector.j * snake.size
+		}
+
+		for (var itr = 0; itr < snake.cubes.length; itr++){
+			if (itr != 0) {
+				snake.cubes[itr].px = snake.cubes[itr].x
+				snake.cubes[itr].py = snake.cubes[itr].y
+				snake.cubes[itr].x = snake.cubes[itr - 1].px
+				snake.cubes[itr].y = snake.cubes[itr - 1].py
+			}	
 		}	
+	} else {
+		window.Game.stop()
 	}
+	
 }
 
 function isImpossibleMove(keyCode, snake){
