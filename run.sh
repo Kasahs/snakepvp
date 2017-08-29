@@ -1,5 +1,7 @@
+#!/bin/sh
 cd ./client
 npm run wp
 cd ../server
-gulp ts
+npm run build-ts
 node dist/main.js
+cd ..

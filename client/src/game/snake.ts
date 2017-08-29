@@ -33,7 +33,7 @@ class Snake {
     }
     private cubes: SnakeCube[] = []
     private head: SnakeCube = null
-    private direction: 
+    private direction: string = null
 
     draw = (grid: Grid) => {
         /**
