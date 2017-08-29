@@ -15,8 +15,8 @@ follow: https://www.digitalocean.com/community/tutorials/how-to-install-node-js-
 #### Run install script (use `chmod u+x` for execution permissions)
 `./install.sh `
 
-#### Run the server and client (use `chmod u+x` for execution permissions)
-`./run.sh`
+#### Build and Run the server and client (use `chmod u+x` for execution permissions)
+`./build.sh`
 the port is hard coded to 9999 at the moment
 
 #### Open client

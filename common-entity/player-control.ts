@@ -21,6 +21,8 @@ class PlayerControl {
         this.code = keyCode,
         this.name = keyName
     }
+
+    
 }
 
 export {PlayerControl, VALID_KEYCODES}

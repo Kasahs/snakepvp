@@ -3,7 +3,10 @@ import { PlayerControl } from "common-entity/player-control"
 
 const keyDownHandler = (e:KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
-    console.log(e)
+    let li = document.createElement('li')
+    li.innerHTML = `sent:${e.code}`
+    let ul = document.querySelector('ul.actions')
+    ul.appendChild(li)
     net.emitClientControls(e)
     // TODO doCanvasPaintForClient();
 }
@@ -11,8 +14,11 @@ const keyDownHandler = (e:KeyboardEvent) => {
 
 const peerControlsHandler = (control: PlayerControl) => {
     // TODO doCanvasPaintForPeers();
-    console.log('peerControlsHandler:')
-    console.log(control)
+    let li = document.createElement('li')
+    li.innerHTML = `recieved:${control.name}`
+    // FIXME reduntand DOM selection
+    let ul = document.querySelector('ul.actions')
+    ul.appendChild(li)
 }
 
 
