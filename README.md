@@ -4,7 +4,7 @@ A multiplayer pvp snake game. With basic client server architecture and websocke
 
 Not ready to be deployed yet
 
-## Instructions for installation and running the basic client server implementation
+## Instructions for installation and running 
 
 #### Install Nodejs v8.1.3 using nvm
 follow: https://www.digitalocean.com/community/tutorials/how-to-install-node-js-with-nvm-node-version-manager-on-a-vps
