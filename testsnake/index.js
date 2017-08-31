@@ -14,7 +14,7 @@ function drawSnake(snake, context){
 		} else {
 			context.fillStyle = 'rgb(200, 200, 0)'
 		}
-		context.fillRect(cube.x, cube.y, snake.size, snake.size)	
+		context.fillRect(cube.x, cube.y, snake.size, snake.size)
 	})	
 }
 

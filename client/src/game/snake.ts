@@ -2,7 +2,8 @@ class Grid {
     private length: number
     private breadth:number
     private cellSize:number
-    private canvas: HTMLCanvasElement = null
+    private canvas: HTMLCanvasElement
+    private context: CanvasRenderingContext2D
 
     constructor(length: number, breadth:number,
         cellSize:number, canvas: HTMLCanvasElement) {
@@ -10,6 +11,10 @@ class Grid {
         this.length = length
         this.breadth = breadth
         this.cellSize = cellSize
+    }
+
+    fill(gridPos: GridPos, color, size) {
+        this.context.fillRect(gridPos.x, gridPos.y, size, size)
     }
 }
 
@@ -43,7 +48,7 @@ class GridPos {
 
 
 interface Drawable {
-    draw(grid: Grid, gridPos: GridPos)
+    draw(grid: Grid, gridPos: GridPos, color: string)
 }
 
 
@@ -58,16 +63,16 @@ class Vector {
 }
 
 
-class Snake implements Drawable {
+class Snake {
     private static MAX_SPEEED:number = 240
-
-    private DIRECTIONS  = {
+    private static SNAKE_HEAD_COLOR = 'rgb(0, 200, 0)' // green
+    private static DIRECTIONS  = {
         UP: 'UP',
         LEFT: 'LEFT',
         DOWN: 'DOWN',
         RIGHT: 'RIGHT'
     }
-
+    private grid: Grid
     private cubes: SnakeCube[] = []
     private head: SnakeCube = null
     public speed:number = 0
@@ -76,7 +81,9 @@ class Snake implements Drawable {
      * @param {SnakeCube[]}
      * @param {number}
      */
-    constructor (cubes: SnakeCube[], speed: number) {
+    constructor (grid:Grid , cubes: SnakeCube[], speed: number) {
+        this.grid = grid
+
         if (speed > Snake.MAX_SPEEED) {
             this.speed = Snake.MAX_SPEEED
         } else {
@@ -88,46 +95,78 @@ class Snake implements Drawable {
         }
     }
 
-    draw(grid: Grid, gridPos: GridPos) {
-        /**
-         * TODO for each cube in snake paint it's grid pos with snake color
-         */
-    }
-
     /**
      * @param {Vector} indicates the direction in which the snake is moving
      * @returns {Boolean} false if snake dies true if still alive
      */
-    move(vector:Vector) {
-        /**
-         * TODO change snake head grid position
-         * and call follow on every following cube
-         */
-        let pGridPos = this.head.pos.clone()
-        this.head.pos.incr(vector.i * this.speed, vector.j * this.speed)
+    move(vector:Vector):Promise<Snake> {
 
-        for (let idx = 1; idx < this.cubes.length; idx++) {
-            let temp = this.cubes[idx].pos
-            this.cubes[idx].pos = pGridPos
-            pGridPos = temp
-            if (this.cubes[idx].pos.equals(this.head.pos)) {
-                return false
+        //Change snake-head grid position and make cubes follow
+
+        let snakeIsAlivePromise  = new Promise((resolve, reject) => {
+
+            let pGridPos = this.head.pos.clone()
+            this.head.pos.incr(vector.i * this.speed, vector.j * this.speed)
+            this.head.draw(this.grid, this.head.pos, Snake.SNAKE_HEAD_COLOR)
+            for (let idx = 1; idx < this.cubes.length; idx++) {
+                let temp = this.cubes[idx].pos
+                this.cubes[idx].pos = pGridPos
+                pGridPos = temp
+                this.cubes[idx].draw(this.grid, this.cubes[idx].pos)
+                if (this.cubes[idx].pos.equals(this.head.pos)) {
+                    reject({
+                        collisionIdx: idx,
+                        snake: this
+                    })
+                }
             }
-        }
 
-        return true
+            resolve(this)
+        })
+
+        return snakeIsAlivePromise
+
     }
 
 }
 
-class SnakeCube {
-    public pos: GridPos = null
+class SnakeCube implements Drawable {
+    static DEFAULT_COLOR: 'rgb(200, 200, 0)' // yellow
 
+    public pos: GridPos = null
     public size: number = null
-    public follows:SnakeCube = null
+
     constructor(size:number) {
         this.size = size
     }
 
+    draw(grid:Grid, gridPos: GridPos = null, color: string=null) {
+        grid.fill(
+            gridPos || this.pos,
+            color || SnakeCube.DEFAULT_COLOR, this.size)
+
+
+    }
+
+
+}
+
+class Egg implements Drawable {
+    private static DEFAULT_COLOR = 'rgb(0, 0, 200)' // blue
+    private size:number
+    private grid:Grid
+    private pos: GridPos
+    constructor(size: number, grid: Grid) {
+        this.size = size
+        this.grid = grid
+    }
+
+    draw(grid: Grid=this.grid,
+        gridpos:GridPos=this.pos,
+        color:string = Egg.DEFAULT_COLOR) {
+
+        grid.fill(gridpos, color, this.size)
+
+    }
 }
 
