@@ -65,7 +65,7 @@ const start = () => {
      * just see if each client is recieving each other's controls
      */
     /* TODO Handle case where room name is empty */
-    /* TODO handle case where init fails due to unavailability of room name */
+    /* TODO case where init fails due to unavailability of room name */
 }
 
 const isNullUndifinedOrEmptyString = (str:string) => {
