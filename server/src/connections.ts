@@ -83,7 +83,7 @@ export const openControlsRelayChannel =
                 console.log('got keydown:')
                 console.log(control)
                 let rooms:string[] = Object.keys(socket.rooms)
-                let room:string = null
+                let room:string|null = null
                 if (rooms.length > 1) {
                     room = rooms[1]
                 }
