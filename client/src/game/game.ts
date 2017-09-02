@@ -5,8 +5,10 @@ const keyDownHandler = (e:KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
     let li = document.createElement('li')
     li.innerHTML = `sent:${e.code}`
-    let ul = document.querySelector('ul.actions')
-    ul.appendChild(li)
+    let ul:Element = <Element>document.querySelector('ul.actions')
+    if(ul) {
+        ul.appendChild(li)
+    }
     net.emitClientControls(e)
     // TODO doCanvasPaintForClient();
 }
@@ -17,8 +19,10 @@ const peerControlsHandler = (control: PlayerControl) => {
     let li = document.createElement('li')
     li.innerHTML = `recieved:${control.name}`
     // FIXME reduntand DOM selection
-    let ul = document.querySelector('ul.actions')
-    ul.appendChild(li)
+    let ul:Element|null = document.querySelector('ul.actions')
+    if(ul) {
+        ul.appendChild(li)
+    }
 }
 
 
@@ -43,14 +47,19 @@ const start = () => {
         net.init(window.location.hash.slice(1))
         document.addEventListener('keydown', keyDownHandler)
     } else {
-        let el:Element =  document.querySelector('.create-room-wizard')
-        let createRoomBtn = el.querySelector('.create-room.btn')
-        el.setAttribute('style', 'display:block')
+        let createRoomWizard:Element =
+            <Element>document.querySelector('.create-room-wizard')
+
+        let createRoomBtn =
+            <Element>createRoomWizard.querySelector('.create-room.btn')
+
         createRoomBtn.addEventListener('click', (e:MouseEvent) => {
             let roomNameEl:HTMLInputElement =
-                <HTMLInputElement>el.querySelector('.room-name')
-            let roomName:string = roomNameEl.value || null
-            if (!isNullUndifinedOrEmptyString(roomName)) {
+                <HTMLInputElement>createRoomWizard
+                .querySelector('.room-name')
+
+            let roomName:string = roomNameEl.value
+            if (!roomName) {
                 net.init(roomName)
                 document.addEventListener('keydown', keyDownHandler)
             } else {
@@ -66,12 +75,6 @@ const start = () => {
      */
     /* TODO Handle case where room name is empty */
     /* TODO case where init fails due to unavailability of room name */
-}
-
-const isNullUndifinedOrEmptyString = (str:string) => {
-    if (str === null || str === undefined || str === "") {
-        return true
-    } else {return false}
 }
 
 export {start}
