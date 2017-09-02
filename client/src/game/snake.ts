@@ -1,4 +1,4 @@
-class Grid {
+export class Grid {
     private static DEFAULT_HEIGHT = 400
     private static DEFAULT_WIDTH = 400
     private static DEFAULT_CELL_SIZE = 20
@@ -44,10 +44,16 @@ class Grid {
 }
 
 
-class GridPos {
+export class GridPos {
     public x:number; y:number
 
     constructor(x:number, y:number) {
+        if (x<0 || y<0) {
+            let invalidGridPosition =
+            `InvalidGridPosition
+            - grid position coordinates cannot be negative`
+            throw new TypeError(invalidGridPosition)
+        }
         this.x = x
         this.y = y
     }
@@ -76,7 +82,7 @@ interface Drawable {
 }
 
 
-class Vector {
+export class Vector {
     i:number = 0
     j:number = 0
 
@@ -87,11 +93,13 @@ class Vector {
 }
 
 
-class Snake {
+export class Snake {
     /* TODO: update speed method */
     /* TODO: add/remove cubes */
     private static MAX_SPEED:number = 240
     private static DEFAULT_SPEED:number = 100
+    private static DEFAULT_CUBE_SIZE:number = 10
+    private static DEFAULT_TAIL_LENGTH:number = 5
 
     private static SNAKE_HEAD_COLOR = 'rgb(0, 200, 0)' // green
     private static DIRECTIONS  = {
@@ -100,18 +108,20 @@ class Snake {
         DOWN: 'DOWN',
         RIGHT: 'RIGHT'
     }
-    private grid: Grid
-    private cubes: SnakeCube[]
-    private head: SnakeCube
+    private grid:Grid
+    private cubes:SnakeCube[]
+    private head:SnakeCube
     public speed:number
 
     /**
      * @param {SnakeCube[]}
      * @param {number}
      */
-    constructor (grid:Grid ,
-    speed: number = Snake.DEFAULT_SPEED,
-    cubes: SnakeCube[] = []) {
+    constructor (grid:Grid,
+    spawnPosition:GridPos,
+    tailLength:number = Snake.DEFAULT_TAIL_LENGTH,
+    cubeSize:number = Snake.DEFAULT_CUBE_SIZE,
+    speed:number = Snake.DEFAULT_SPEED) {
 
         this.grid = grid
 
@@ -120,9 +130,18 @@ class Snake {
         } else {
             this.speed = speed
         }
-        this.cubes = cubes
-        if (cubes.length > 0) {
-            this.head = cubes[0]
+
+        /* Intialize this.cubes[] based on provided params  */
+        this.cubes = []
+        for(let i=tailLength; i>0; i++) {
+            let x = spawnPosition.x + ((tailLength - i)* cubeSize)
+            let pos = new GridPos(x, spawnPosition.y)
+            let cube = new SnakeCube(pos, cubeSize)
+            this.cubes.push(cube)
+        }
+
+        if (this.cubes.length > 0) {
+            this.head = this.cubes[0]
         }
     }
 
@@ -167,27 +186,28 @@ class Snake {
 
 }
 
-class SnakeCube implements Drawable {
+export class SnakeCube implements Drawable {
     static DEFAULT_COLOR: 'rgb(200, 200, 0)' // yellow
 
     public pos: GridPos
     public size: number
 
-    constructor(size:number) {
+    constructor(pos:GridPos, size:number) {
         this.size = size
+        this.pos = pos
     }
 
     /* TODO: Figure out how to indicate something cannot be null? */
-    draw(grid:Grid,
-    gridPos: GridPos = this.pos,
+    draw(grid:Grid, gridPos:GridPos = this.pos,
     color:string=SnakeCube.DEFAULT_COLOR) {
+
         grid.fill(gridPos, color, this.size)
     }
 
 
 }
 
-class Egg implements Drawable {
+export class Egg implements Drawable {
     private static DEFAULT_COLOR = 'rgb(0, 0, 200)' // blue
 
     private size:number

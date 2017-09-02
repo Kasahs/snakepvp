@@ -1,5 +1,7 @@
-import * as net from './networking'
+import { Snake } from './snake'
+import * as net from 'game/networking'
 import { PlayerControl } from "common-entity/player-control"
+import { Grid, GridPos } from "game/snake"
 
 const keyDownHandler = (e:KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
@@ -29,6 +31,42 @@ const peerControlsHandler = (control: PlayerControl) => {
 const peerConnectionHandler = (peers:string[]) => {
     // TODO
     console.log('peerConnectionHandler')
+    gameloop().start()
+
+}
+
+let init = () => {
+    let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
+    let grid = new Grid(canvas)
+    let spawnPosition = new GridPos(0, 0)
+    let intialTailLength = 5
+    let snake1:Snake = new Snake(grid, spawnPosition, intialTailLength)
+
+}
+
+let gameloop = ():object => {
+    let stopLoop:Boolean = false
+    let isOn:Boolean = false
+    let start = (time) => {
+        if(!stopLoop) {
+            isOn = true
+            window.requestAnimationFrame(start)
+        } else {
+            stopLoop = false
+        }
+    }
+
+    let stop = (cb) => {
+        stopLoop = true
+        isOn = false
+        cb()
+    }
+
+    return {
+        start,
+        stop,
+        isOn
+    }
 }
 
 
