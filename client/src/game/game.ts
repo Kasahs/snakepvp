@@ -44,10 +44,16 @@ let init = () => {
 
 }
 
-let gameloop = ():object => {
-    let stopLoop:Boolean = false
-    let isOn:Boolean = false
-    let start = (time) => {
+interface IntervalLoop {
+    isOn:boolean
+    start:(time?:any) => void
+    stop:(cb:()=>any) => void
+}
+
+let gameloop = ():IntervalLoop => {
+    let stopLoop:boolean = false
+    let isOn:boolean = false
+    let start = (time?:any) => {
         if(!stopLoop) {
             isOn = true
             window.requestAnimationFrame(start)
