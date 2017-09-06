@@ -1,8 +1,8 @@
-import * as net from '../game/networking';
+import * as net from '../game/networking'
 import { PlayerControl } from "common-entity/player-control"
 import { Grid, GridPos, Snake, Egg } from "../game/snake"
 
-const keyDownHandler = (e: KeyboardEvent) => {
+const keyDownRelayHandler = (e: KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
     let li = document.createElement('li')
     li.innerHTML = `sent:${e.code}`
@@ -12,7 +12,6 @@ const keyDownHandler = (e: KeyboardEvent) => {
     }
     net.emitClientControls(e)
     // TODO: doCanvasPaintForClient()
-
 }
 
 
@@ -30,12 +29,7 @@ const peerControlsHandler = (control: PlayerControl) => {
 
 const peerConnectionHandler = (peers: string[]) => {
     console.log('peerConnectionHandler')
-
 }
-
-
-
-
 
 interface IntervalLoop {
     isOn: boolean
@@ -44,7 +38,9 @@ interface IntervalLoop {
 }
 
 
-let getGameLoop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
+let getGameLoop = (grid: Grid,
+    snakes: Snake[], eggs: Egg[]): IntervalLoop => {
+
     let stopLoop: boolean = false
     let isOn: boolean = false
     let start = (time?: any) => {
@@ -55,7 +51,7 @@ let getGameLoop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
             snakes.forEach((snake: Snake) => {
                 snake.draw()
             })
-            eggs.forEach((egg:Egg) => {
+            eggs.forEach((egg: Egg) => {
                 egg.draw()
             })
             grid.restoreContext()
@@ -65,10 +61,10 @@ let getGameLoop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
         }
     }
 
-    let stop = (cb?:() => any) => {
+    let stop = (cb?: () => any) => {
         stopLoop = true
         isOn = false
-        if(cb){
+        if (cb) {
             cb()
         }
     }
@@ -83,46 +79,48 @@ let getGameLoop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
 let initGame = () => {
     let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
     let grid = new Grid(canvas)
-    
+
     let snakes: Snake[] = []
     let eggs: Egg[] = []
-    
-    let spawnPosition = new GridPos(0, 0)   
+
+    let spawnPosition = new GridPos(0, 0)
     let snake1: Snake = new Snake(grid, spawnPosition)
     let egg = new Egg(grid, grid.getRandomPos())
     snakes.push(snake1)
     eggs.push(egg)
 
-    let startGameBtn:Element|null = document.querySelector('.start-game.btn')
-    if(!startGameBtn){
+    let startGameBtn: Element | null =
+        document.querySelector('.start-game.btn')
+
+    if (!startGameBtn) {
         throw new Error('ElementNotFound: .start-game.btn')
     }
 
-    startGameBtn.addEventListener('click', (e:MouseEvent) => {
+    startGameBtn.addEventListener('click', (e: MouseEvent) => {
         let gameLoop = getGameLoop(grid, snakes, eggs)
         gameLoop.start()
-        document.addEventListener('keydown', Snake.getControlsHandler(snake1))
+        document
+            .addEventListener('keydown', Snake.getControlsHandler(snake1))
+        document.addEventListener('keydown', keyDownRelayHandler)
         //TODO: add peer controls handler
-        
-        let snake1MoveInterval = window.setInterval(()=>{
-            snake1.move().then((snake)=>{
+
+        let snake1MoveInterval = window.setInterval(() => {
+            snake1.move().then((snake) => {
                 //TODO: check if egg eaten
                 // check if snakes collided
-                for (let i = 0; i < eggs.length; i++){
-                    if(eggs[i].pos.equals(snake1.head.pos)){
+                for (let i = 0; i < eggs.length; i++) {
+                    if (eggs[i].pos.equals(snake1.head.pos)) {
                         snake1.grow()
                         eggs[i] = new Egg(grid, grid.getRandomPos())
                     }
                 }
-                
-            }, function snakeAteSelf() {
-
+            }, () => {
                 gameLoop.stop()
                 window.clearInterval(snake1MoveInterval)
             })
         }, snake1.speed)
     })
-    
+
 
 }
 
