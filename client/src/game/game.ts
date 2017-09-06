@@ -1,6 +1,6 @@
-import * as net from 'game/networking'
+import * as net from '../game/networking';
 import { PlayerControl } from "common-entity/player-control"
-import { Grid, GridPos, Snake, Egg } from "game/snake"
+import { Grid, GridPos, Snake, Egg } from "../game/snake"
 
 const keyDownHandler = (e: KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
@@ -33,56 +33,18 @@ const peerConnectionHandler = (peers: string[]) => {
 
 }
 
-let getControlsHandler = (snake:Snake) => {
-    let KEYCODES = {
-        UP: 38,
-        LEFT: 37,
-        DOWN: 40,
-        RIGHT: 39
-    }
 
-    let VALID_KEYS:number[] = [38,37,40,39]
 
-    let controlsHandler = (e:KeyboardEvent) => {
-        if(VALID_KEYS.indexOf(e.keyCode) <= -1) {
-            return
-        }
-        if(e.keyCode === KEYCODES.UP) {
-			snake.vector.i = 0, snake.vector.j = -1
-		}
-		if(e.keyCode === KEYCODES.LEFT) {
-			snake.vector.i = -1, snake.vector.j = 0
-		}
-		if(e.keyCode === KEYCODES.DOWN) {
-			snake.vector.i = 0, snake.vector.j = 1
-		}
-		if(e.keyCode === KEYCODES.RIGHT ) {
-			snake.vector.i = 1, snake.vector.j = 0
-		}
-    }
-
-    return controlsHandler
-
-}
-
-let init = () => {
-    let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
-    let grid = new Grid(canvas)
-    let spawnPosition = new GridPos(0, 0)
-    let intialTailLength = 5
-    let snake1: Snake = new Snake(grid, spawnPosition, intialTailLength)
-
-}
 
 
 interface IntervalLoop {
     isOn: boolean
     start: (time?: any) => void
-    stop: (cb: () => any) => void
+    stop: (cb?: () => any) => void
 }
 
 
-let gameloop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
+let getGameLoop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
     let stopLoop: boolean = false
     let isOn: boolean = false
     let start = (time?: any) => {
@@ -90,7 +52,7 @@ let gameloop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
             isOn = true
             grid.saveContext()
             grid.clear()
-            snakes.forEach((snake:Snake) => {
+            snakes.forEach((snake: Snake) => {
                 snake.draw()
             })
             eggs.forEach((egg:Egg) => {
@@ -103,10 +65,12 @@ let gameloop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
         }
     }
 
-    let stop = (cb) => {
+    let stop = (cb?:() => any) => {
         stopLoop = true
         isOn = false
-        cb()
+        if(cb){
+            cb()
+        }
     }
 
     return {
@@ -114,6 +78,52 @@ let gameloop = (grid: Grid, snakes:Snake[], eggs:Egg[]): IntervalLoop => {
         stop,
         isOn
     }
+}
+
+let initGame = () => {
+    let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
+    let grid = new Grid(canvas)
+    
+    let snakes: Snake[] = []
+    let eggs: Egg[] = []
+    
+    let spawnPosition = new GridPos(0, 0)   
+    let snake1: Snake = new Snake(grid, spawnPosition)
+    let egg = new Egg(grid, grid.getRandomPos())
+    snakes.push(snake1)
+    eggs.push(egg)
+
+    let startGameBtn:Element|null = document.querySelector('.start-game.btn')
+    if(!startGameBtn){
+        throw new Error('ElementNotFound: .start-game.btn')
+    }
+
+    startGameBtn.addEventListener('click', (e:MouseEvent) => {
+        let gameLoop = getGameLoop(grid, snakes, eggs)
+        gameLoop.start()
+        document.addEventListener('keydown', Snake.getControlsHandler(snake1))
+        //TODO: add peer controls handler
+        
+        let snake1MoveInterval = window.setInterval(()=>{
+            snake1.move().then((snake)=>{
+                //TODO: check if egg eaten
+                // check if snakes collided
+                for (let i = 0; i < eggs.length; i++){
+                    if(eggs[i].pos.equals(snake1.head.pos)){
+                        snake1.grow()
+                        eggs[i] = new Egg(grid, grid.getRandomPos())
+                    }
+                }
+                
+            }, function snakeAteSelf() {
+
+                gameLoop.stop()
+                window.clearInterval(snake1MoveInterval)
+            })
+        }, snake1.speed)
+    })
+    
+
 }
 
 
@@ -128,7 +138,7 @@ const start = () => {
     if (window.location.hash) {
         // remove the # in front
         net.init(window.location.hash.slice(1))
-        document.addEventListener('keydown', keyDownHandler)
+        initGame()
     } else {
         let createRoomWizard: Element =
             <Element>document.querySelector('.create-room-wizard')
@@ -137,7 +147,9 @@ const start = () => {
             <Element>createRoomWizard.querySelector('.create-room.btn')
 
         createRoomBtn.addEventListener('click', (e: MouseEvent) => {
-            getRoomNameFromWizard(createRoomWizard)
+            let roomName = getRoomNameFromWizard(createRoomWizard)
+            net.init(roomName)
+            initGame()
         })
     }
 }

@@ -1,7 +1,7 @@
 export class Grid {
     private static DEFAULT_HEIGHT = 400
     private static DEFAULT_WIDTH = 400
-    private static DEFAULT_CELL_SIZE = 20
+    private static DEFAULT_CELL_SIZE = 10
     private canvas: HTMLCanvasElement
     private context: CanvasRenderingContext2D
 
@@ -19,6 +19,7 @@ export class Grid {
         this.cellSize = cellSize
         canvas.height = this.height
         canvas.width = this.width
+        canvas.style.backgroundColor = 'black'
         let ctx = canvas.getContext('2d')
         if (ctx == null) {
             let badRenderingContext =
@@ -46,8 +47,10 @@ export class Grid {
     }
 
     getRandomPos(): GridPos {
-        let x = Math.floor(Math.random() * this.width)
-        let y = Math.floor(Math.random() * this.height)
+        let temp = Math.floor(Math.random() * this.width)
+        let x = temp - (temp % this.cellSize)
+        temp =  Math.floor(Math.random() * this.height)
+        let y = temp - (temp %  this.cellSize)
         return new GridPos(x, y)
     }
 
@@ -61,12 +64,6 @@ export class GridPos {
     public x: number; y: number
 
     constructor(x: number, y: number) {
-        if (x < 0 || y < 0) {
-            let invalidGridPosition =
-                `InvalidGridPosition
-            - grid position coordinates cannot be negative`
-            throw new TypeError(invalidGridPosition)
-        }
         this.x = x
         this.y = y
     }
@@ -111,7 +108,8 @@ export class Snake implements Drawable {
     /* TODO: add/remove cubes */
     private static MAX_SPEED: number = 240
     private static DEFAULT_SPEED: number = 100
-    private static DEFAULT_CUBE_SIZE: number = 10
+    // all sizes are in terms of grid cells
+    private static DEFAULT_CUBE_SIZE: number = 1 
     private static DEFAULT_TAIL_LENGTH: number = 5
 
     private static SNAKE_HEAD_COLOR = 'rgb(0, 200, 0)' // green
@@ -123,9 +121,50 @@ export class Snake implements Drawable {
     }
     private grid: Grid
     private cubes: SnakeCube[]
-    private head: SnakeCube
-    public vector: Vector
-    public speed: number
+    
+    head: SnakeCube
+    vector: Vector = new Vector(1,0) //facing right by default
+    speed: number
+
+    static getControlsHandler = (snake:Snake) => {
+        let KEYCODES = {
+            UP: 38,
+            LEFT: 37,
+            DOWN: 40,
+            RIGHT: 39
+        }
+    
+        let VALID_KEYS:number[] = [38,37,40,39]
+    
+        let controlsHandler = (e:KeyboardEvent) => {
+            if(VALID_KEYS.indexOf(e.keyCode) <= -1) {
+                return
+            }
+            if(e.keyCode === KEYCODES.UP) {
+                if(!(snake.vector.j === 1)) {
+                    snake.vector.i = 0, snake.vector.j = -1
+                }
+            }
+            if(e.keyCode === KEYCODES.LEFT) {
+                if(!(snake.vector.i === 1)) {
+                    snake.vector.i = -1, snake.vector.j = 0
+                }
+            }
+            if(e.keyCode === KEYCODES.DOWN) {
+                if(!(snake.vector.j === -1)) {
+                    snake.vector.i = 0, snake.vector.j = 1
+                }
+            }
+            if(e.keyCode === KEYCODES.RIGHT ) {
+                if(!(snake.vector.i === -1)) {
+                    snake.vector.i = 1, snake.vector.j = 0
+                }
+            }
+        }
+    
+        return controlsHandler
+    
+    }
 
     /**
      * @param {SnakeCube[]}
@@ -147,10 +186,17 @@ export class Snake implements Drawable {
 
         /* Intialize this.cubes[] based on provided params  */
         this.cubes = []
-        for (let i = tailLength; i > 0; i++) {
-            let x = spawnPosition.x + ((tailLength - i) * cubeSize)
+        
+        for (let i = 1; i <= tailLength; i++) {
+            let offset = (tailLength - i) * cubeSize * this.grid.cellSize
+            let prevOffset = (tailLength - (i+1)) * cubeSize * this.grid.cellSize
+            let x = spawnPosition.x + offset
+            let px = spawnPosition.x + prevOffset
+             
+            let prevPos = new GridPos(px, spawnPosition.y)
             let pos = new GridPos(x, spawnPosition.y)
-            let cube = new SnakeCube(pos, cubeSize)
+             
+            let cube = new SnakeCube(pos, prevPos, cubeSize)
             this.cubes.push(cube)
         }
 
@@ -170,15 +216,25 @@ export class Snake implements Drawable {
         //TODO: prevent illegal direction change
         let moveExecutor = (resolve, reject) => {
             /* TODO: find a neater way to do this using Array.shift maybe*/
-            let pGridPos = this.head.pos.clone()
-            this.head.pos.incr(vector.i * this.speed,
-                vector.j * this.speed)
+            
+            this.head.prevPos = this.head.pos.clone()
+            
+            if (this.head.pos.x > this.grid.width - this.grid.cellSize) {
+                this.head.pos.x = 0 
+            } else if (this.head.pos.x < 0) {
+                this.head.pos.x = this.grid.width - this.grid.cellSize
+            } else if (this.head.pos.y > this.grid.height - this.grid.cellSize) {
+                this.head.pos.y = 0
+            } else if (this.head.pos.y < 0) {
+                this.head.pos.y = this.grid.height - this.grid.cellSize
+            } else {
+                this.head.pos.incr(vector.i * this.grid.cellSize,
+                    vector.j * this.grid.cellSize)
+            }
 
             for (let idx = 1; idx < this.cubes.length; idx++) {
-                let temp = this.cubes[idx].pos
-                this.cubes[idx].pos = pGridPos
-                pGridPos = temp
-
+                this.cubes[idx].prevPos = this.cubes[idx].pos.clone()
+                this.cubes[idx].pos = this.cubes[idx - 1].prevPos
                 if (this.cubes[idx].pos.equals(this.head.pos)) {
                     reject({
                         collisionIdx: idx,
@@ -196,6 +252,20 @@ export class Snake implements Drawable {
 
     }
 
+    grow(cubes?:SnakeCube[]){
+        let pos = this.cubes[this.cubes.length - 1].prevPos.clone()
+        /**
+         * FIXME: assigning default value cause gridpos cannot be null
+         * we can make [pos] and [prevPos] of type GridPos|null 
+         * then they can be assigned to each other and be null too
+         * However, we will then have to check for null values 
+         * when performing operations on them, which sucks
+         */
+        let prevPos = new GridPos(-1,-1)
+        let cube = new SnakeCube(pos, prevPos, Snake.DEFAULT_CUBE_SIZE)
+        this.cubes.push(cube)
+    }
+
     draw(grid: Grid = this.grid, gridPos?: GridPos, color?: string) {
         this.cubes.forEach((cube: SnakeCube, idx: number) => {
             if (idx === 0) {
@@ -205,17 +275,20 @@ export class Snake implements Drawable {
             }
         })
     }
+
+   
 }
 
 export class SnakeCube implements Drawable {
     static DEFAULT_COLOR: 'rgb(200, 200, 0)' // yellow
-
+    public prevPos: GridPos
     public pos: GridPos
     public size: number
 
-    constructor(pos: GridPos, size: number) {
+    constructor(pos: GridPos, prevPos: GridPos, size: number) {
         this.size = size
         this.pos = pos
+        this.prevPos = prevPos
     }
 
     /* TODO: Figure out how to indicate something cannot be null? */
@@ -229,16 +302,17 @@ export class SnakeCube implements Drawable {
 }
 
 export class Egg implements Drawable {
-    private static DEFAULT_COLOR = 'rgb(0, 0, 200)' // blue
+    private static DEFAULT_COLOR:string = 'rgb(0, 0, 200)' // blue
+    private static DEFAULT_SIZE:number = 1
 
     private size: number
     private grid: Grid
-    private pos: GridPos
+    pos: GridPos
 
-    constructor(size: number, grid: Grid, pos: GridPos) {
+    constructor(grid: Grid, pos: GridPos, size: number = Egg.DEFAULT_SIZE) {
         this.size = size
         this.grid = grid
-        this.pos = pos || grid.getRandomPos()
+        this.pos = pos
     }
 
 

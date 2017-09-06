@@ -1,5 +1,4 @@
 import * as io from 'socket.io-client'
-import * as $ from 'jquery'
 import { PlayerControl } from 'common-entity/player-control'
 
 const NAMESPACES = {
