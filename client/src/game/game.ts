@@ -1,14 +1,17 @@
-import * as net from './networking'
+import * as net from '../game/networking'
 import { PlayerControl } from "common-entity/player-control"
+import { Grid, GridPos, Snake, Egg } from "../game/snake"
 
-const keyDownHandler = (e:KeyboardEvent) => {
+const keyDownRelayHandler = (e: KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
     let li = document.createElement('li')
     li.innerHTML = `sent:${e.code}`
-    let ul = document.querySelector('ul.actions')
-    ul.appendChild(li)
+    let ul: Element = <Element>document.querySelector('ul.actions')
+    if (ul) {
+        ul.appendChild(li)
+    }
     net.emitClientControls(e)
-    // TODO doCanvasPaintForClient();
+    // TODO: doCanvasPaintForClient()
 }
 
 
@@ -16,21 +19,113 @@ const peerControlsHandler = (control: PlayerControl) => {
     // TODO doCanvasPaintForPeers();
     let li = document.createElement('li')
     li.innerHTML = `recieved:${control.name}`
-    // FIXME reduntand DOM selection
-    let ul = document.querySelector('ul.actions')
-    ul.appendChild(li)
+    // FIXME redundant DOM selection
+    let ul: Element | null = document.querySelector('ul.actions')
+    if (ul) {
+        ul.appendChild(li)
+    }
 }
 
 
-const peerConnectionHandler = (peers:string[]) => {
-    // TODO
+const peerConnectionHandler = (peers: string[]) => {
     console.log('peerConnectionHandler')
+}
+
+interface IntervalLoop {
+    isOn: boolean
+    start: (time?: any) => void
+    stop: (cb?: () => any) => void
+}
+
+
+let getGameLoop = (grid: Grid,
+    snakes: Snake[], eggs: Egg[]): IntervalLoop => {
+
+    let stopLoop: boolean = false
+    let isOn: boolean = false
+    let start = (time?: any) => {
+        if (!stopLoop) {
+            isOn = true
+            grid.saveContext()
+            grid.clear()
+            snakes.forEach((snake: Snake) => {
+                snake.draw()
+            })
+            eggs.forEach((egg: Egg) => {
+                egg.draw()
+            })
+            grid.restoreContext()
+            window.requestAnimationFrame(start)
+        } else {
+            stopLoop = false
+        }
+    }
+
+    let stop = (cb?: () => any) => {
+        stopLoop = true
+        isOn = false
+        if (cb) {
+            cb()
+        }
+    }
+
+    return {
+        start,
+        stop,
+        isOn
+    }
+}
+
+let initGame = () => {
+    let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
+    let grid = new Grid(canvas)
+
+    let snakes: Snake[] = []
+    let eggs: Egg[] = []
+
+    let spawnPosition = new GridPos(0, 0)
+    let snake1: Snake = new Snake(grid, spawnPosition)
+    let egg = new Egg(grid, grid.getRandomPos())
+    snakes.push(snake1)
+    eggs.push(egg)
+
+    let startGameBtn: Element | null =
+        document.querySelector('.start-game.btn')
+
+    if (!startGameBtn) {
+        throw new Error('ElementNotFound: .start-game.btn')
+    }
+
+    startGameBtn.addEventListener('click', (e: MouseEvent) => {
+        let gameLoop = getGameLoop(grid, snakes, eggs)
+        gameLoop.start()
+        document
+            .addEventListener('keydown', Snake.getControlsHandler(snake1))
+        document.addEventListener('keydown', keyDownRelayHandler)
+        //TODO: add peer controls handler
+
+        let snake1MoveInterval = window.setInterval(() => {
+            snake1.move().then((snake) => {
+                //TODO: check if egg eaten
+                // check if snakes collided
+                for (let i = 0; i < eggs.length; i++) {
+                    if (eggs[i].pos.equals(snake1.head.pos)) {
+                        snake1.grow()
+                        eggs[i] = new Egg(grid, grid.getRandomPos())
+                    }
+                }
+            }, () => {
+                gameLoop.stop()
+                window.clearInterval(snake1MoveInterval)
+            })
+        }, snake1.speed)
+    })
+
+
 }
 
 
 const start = () => {
-
-
     /* net.init will fail without this handler */
     net.setPeerControlsHandler(peerControlsHandler)
     net.setPeerConnectionHandler(peerConnectionHandler)
@@ -41,37 +136,40 @@ const start = () => {
     if (window.location.hash) {
         // remove the # in front
         net.init(window.location.hash.slice(1))
-        document.addEventListener('keydown', keyDownHandler)
+        initGame()
     } else {
-        let el:Element =  document.querySelector('.create-room-wizard')
-        let createRoomBtn = el.querySelector('.create-room.btn')
-        el.setAttribute('style', 'display:block')
-        createRoomBtn.addEventListener('click', (e:MouseEvent) => {
-            let roomNameEl:HTMLInputElement =
-                <HTMLInputElement>el.querySelector('.room-name')
-            let roomName:string = roomNameEl.value || null
-            if (!isNullUndifinedOrEmptyString(roomName)) {
-                net.init(roomName)
-                document.addEventListener('keydown', keyDownHandler)
-            } else {
-                console.error('Room name cannot be empty')
-            }
+        let createRoomWizard: Element =
+            <Element>document.querySelector('.create-room-wizard')
+
+        let createRoomBtn =
+            <Element>createRoomWizard.querySelector('.create-room.btn')
+
+        createRoomBtn.addEventListener('click', (e: MouseEvent) => {
+            let roomName = getRoomNameFromWizard(createRoomWizard)
+            net.init(roomName)
+            initGame()
         })
     }
-    /* TODO show invite url to user once connection to room established */
-    /**
-     * TODO handle the case when peer joins room
-     * when he joins show play with peer button
-     * just see if each client is recieving each other's controls
-     */
-    /* TODO Handle case where room name is empty */
-    /* TODO handle case where init fails due to unavailability of room name */
 }
 
-const isNullUndifinedOrEmptyString = (str:string) => {
-    if (str === null || str === undefined || str === "") {
-        return true
-    } else {return false}
+
+
+let getRoomNameFromWizard = (createRoomWizard: Element): string => {
+
+    let createRoomBtn =
+        <Element>createRoomWizard.querySelector('.create-room.btn')
+
+    let roomNameEl: HTMLInputElement =
+        <HTMLInputElement>createRoomWizard
+            .querySelector('.room-name')
+
+    if (!roomNameEl.value) {
+        throw new Error('InvalidRoomName: undefined|null|empty')
+    } else {
+        return roomNameEl.value
+    }
+
 }
 
-export {start}
+
+export { start }
