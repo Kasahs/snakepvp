@@ -1,4 +1,4 @@
-import * as game from './game/index'
+import * as game from './game'
 
 window.onload = () => {
     game.start()
