@@ -1,5 +1,4 @@
 import * as io from 'socket.io-client'
-import * as $ from 'jquery'
 import { PlayerControl } from 'common-entity/player-control'
 
 const NAMESPACES = {
@@ -50,7 +49,7 @@ const HANDLERS = {
     }
 }
 
-let controlsChannel:SocketIOClient.Socket = null
+let controlsChannel:SocketIOClient.Socket
 
 /**
  * set handler for responding to input recieved from other players(peers)
@@ -135,16 +134,7 @@ const getRoom = (roomName:string): Promise<any> => {
 const init = (roomName) => {
     // initTestChannel(roomName)
     initControlsChannel(roomName)
-    /* TODO check room availability */
-    /* getRoom(roomName).then(function(data:any){
-        let roomName = null, roomUrl = null;
-        roomName = data.roomName || roomName;
-        roomUrl = data.roomUrl || roomUrl;
-        initTestChannel(roomName);
-        initControlsChannel(roomName);
-    }, function(data){
-        console.error('Could not join a room, can not initialize game');
-    }); */
+    /* TODO: check room availability */
 }
 
 export {

@@ -14,7 +14,7 @@ function drawSnake(snake, context){
 		} else {
 			context.fillStyle = 'rgb(200, 200, 0)'
 		}
-		context.fillRect(cube.x, cube.y, snake.size, snake.size)	
+		context.fillRect(cube.x, cube.y, snake.size, snake.size)
 	})	
 }
 
@@ -110,7 +110,7 @@ function isEggEaten(eggs, snake){
 }
 
 
-function moveSnakeWhileAlive(snake, canvas){
+function moveSnake(snake, canvas){
 	var snakeHead = snake.cubes[0]
 	snakeHead.px = snakeHead.x
 	snakeHead.py = snakeHead.y
@@ -224,7 +224,7 @@ window.onload = function () {
 			window.Game.start();
 			
 			var snakeControlLoop = setInterval(() => {
-				var isSnakeAlive = moveSnakeWhileAlive(snake, canvas);
+				var isSnakeAlive = moveSnake(snake, canvas);
 				if(!isSnakeAlive){
 					window.Game.stop()
 					window.clearInterval(snakeControlLoop)
