@@ -110,8 +110,8 @@ const emitClientControls = (event:KeyboardEvent) => {
     }
 
     // do something only if keycode is valid
-    if (PlayerControl.isValidKeycode(event.keyCode)) {
-        let control = new PlayerControl(event.keyCode, event.code)
+    if (PlayerControl.isValidControl(event)) {
+        let control = new PlayerControl(event)
         controlsChannel.emit(EVENTS.CONTROLS, control)
     }
 

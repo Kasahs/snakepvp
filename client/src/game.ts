@@ -99,15 +99,21 @@ let initGame = () => {
     startGameBtn.addEventListener('click', (e: MouseEvent) => {
         let gameLoop = getGameLoop(grid, snakes, eggs)
         gameLoop.start()
+        
+        let controlsHandler = Snake.getControlsHandler(snake1)
         document
-            .addEventListener('keydown', Snake.getControlsHandler(snake1))
+            .addEventListener('keydown', function(e:KeyboardEvent){
+                if (PlayerControl.isValidControl(e)){
+                    controlsHandler(new PlayerControl(e))
+                }
+            })
         document.addEventListener('keydown', keyDownRelayHandler)
         //TODO: add peer controls handler
 
         let snake1MoveInterval = window.setInterval(() => {
             snake1.move().then((snake) => {
-                //TODO: check if egg eaten
-                // check if snakes collided
+                
+                
                 for (let i = 0; i < eggs.length; i++) {
                     if (eggs[i].pos.equals(snake1.head.pos)) {
                         snake1.grow()

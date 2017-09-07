@@ -1,3 +1,5 @@
+import { PlayerControl } from "common-entity/player-control";
+
 export class Grid {
     private static DEFAULT_HEIGHT = 400
     private static DEFAULT_WIDTH = 400
@@ -127,35 +129,25 @@ export class Snake implements Drawable {
     speed: number
 
     static getControlsHandler = (snake:Snake) => {
-        let KEYCODES = {
-            UP: 38,
-            LEFT: 37,
-            DOWN: 40,
-            RIGHT: 39
-        }
 
-        let VALID_KEYS:number[] = [38,37,40,39]
-
-        let controlsHandler = (e:KeyboardEvent) => {
-            if(VALID_KEYS.indexOf(e.keyCode) <= -1) {
-                return
-            }
-            if(e.keyCode === KEYCODES.UP) {
+        let controlsHandler = (e:PlayerControl) => {
+            
+            if(e.isDirection('up')) {
                 if(!(snake.vector.j === 1)) {
                     snake.vector.i = 0, snake.vector.j = -1
                 }
             }
-            if(e.keyCode === KEYCODES.LEFT) {
+            if(e.isDirection('left')) {
                 if(!(snake.vector.i === 1)) {
                     snake.vector.i = -1, snake.vector.j = 0
                 }
             }
-            if(e.keyCode === KEYCODES.DOWN) {
+            if(e.isDirection('down')) {
                 if(!(snake.vector.j === -1)) {
                     snake.vector.i = 0, snake.vector.j = 1
                 }
             }
-            if(e.keyCode === KEYCODES.RIGHT ) {
+            if(e.isDirection('right')) {
                 if(!(snake.vector.i === -1)) {
                     snake.vector.i = 1, snake.vector.j = 0
                 }
