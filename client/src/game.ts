@@ -99,11 +99,11 @@ let initGame = () => {
     startGameBtn.addEventListener('click', (e: MouseEvent) => {
         let gameLoop = getGameLoop(grid, snakes, eggs)
         gameLoop.start()
-        
+
         let controlsHandler = Snake.getControlsHandler(snake1)
         document
-            .addEventListener('keydown', function(e:KeyboardEvent){
-                if (PlayerControl.isValidControl(e)){
+            .addEventListener('keydown', (e:KeyboardEvent) => {
+                if (PlayerControl.isValidControl(e)) {
                     controlsHandler(new PlayerControl(e))
                 }
             })
@@ -112,8 +112,8 @@ let initGame = () => {
 
         let snake1MoveInterval = window.setInterval(() => {
             snake1.move().then((snake) => {
-                
-                
+
+
                 for (let i = 0; i < eggs.length; i++) {
                     if (eggs[i].pos.equals(snake1.head.pos)) {
                         snake1.grow()
@@ -126,8 +126,6 @@ let initGame = () => {
             })
         }, snake1.speed)
     })
-
-
 }
 
 
@@ -135,6 +133,7 @@ const start = () => {
     /* net.init will fail without this handler */
     net.setPeerControlsHandler(peerControlsHandler)
     net.setPeerConnectionHandler(peerConnectionHandler)
+
     /**
      * when URL already has a room name automatically join that room.
      * If not show create room wizard and wait for correct input

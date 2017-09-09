@@ -1,4 +1,4 @@
-import { PlayerControl } from "common-entity/player-control";
+import { PlayerControl } from "common-entity/player-control"
 
 export class Grid {
     private static DEFAULT_HEIGHT = 400
@@ -131,7 +131,7 @@ export class Snake implements Drawable {
     static getControlsHandler = (snake:Snake) => {
 
         let controlsHandler = (e:PlayerControl) => {
-            
+
             if(e.isDirection('up')) {
                 if(!(snake.vector.j === 1)) {
                     snake.vector.i = 0, snake.vector.j = -1

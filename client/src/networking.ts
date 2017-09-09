@@ -8,7 +8,7 @@ const NAMESPACES = {
 
 /**
  *  FIXME: Potentially bad name, change to ROOM_EVENTS
- * GLOBAL_EVENTS should refer to ones which are sent to all 
+ * GLOBAL_EVENTS should refer to ones which are sent to all
  * sockets regardless of room or namespace separation
  */
 const GLOBAL_EVENTS = {
