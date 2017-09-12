@@ -51,8 +51,8 @@ export class Grid {
     getRandomPos(): GridPos {
         let temp = Math.floor(Math.random() * this.width)
         let x = temp - (temp % this.cellSize)
-        temp =  Math.floor(Math.random() * this.height)
-        let y = temp - (temp %  this.cellSize)
+        temp = Math.floor(Math.random() * this.height)
+        let y = temp - (temp % this.cellSize)
         return new GridPos(x, y)
     }
 
@@ -125,30 +125,32 @@ export class Snake implements Drawable {
     private cubes: SnakeCube[]
 
     head: SnakeCube
-    vector: Vector = new Vector(1,0) //facing right by default
+    vector: Vector = new Vector(1, 0) //facing right by default
     speed: number
+    interval: number
+    ateSelf: boolean = false
 
-    static getControlsHandler = (snake:Snake) => {
+    static getControlsHandler = (snake: Snake) => {
 
-        let controlsHandler = (e:PlayerControl) => {
+        let controlsHandler = (e: PlayerControl) => {
 
-            if(e.isDirection('up')) {
-                if(!(snake.vector.j === 1)) {
+            if (e.isDirection('up')) {
+                if (!(snake.vector.j === 1)) {
                     snake.vector.i = 0, snake.vector.j = -1
                 }
             }
-            if(e.isDirection('left')) {
-                if(!(snake.vector.i === 1)) {
+            if (e.isDirection('left')) {
+                if (!(snake.vector.i === 1)) {
                     snake.vector.i = -1, snake.vector.j = 0
                 }
             }
-            if(e.isDirection('down')) {
-                if(!(snake.vector.j === -1)) {
+            if (e.isDirection('down')) {
+                if (!(snake.vector.j === -1)) {
                     snake.vector.i = 0, snake.vector.j = 1
                 }
             }
-            if(e.isDirection('right')) {
-                if(!(snake.vector.i === -1)) {
+            if (e.isDirection('right')) {
+                if (!(snake.vector.i === -1)) {
                     snake.vector.i = 1, snake.vector.j = 0
                 }
             }
@@ -182,7 +184,7 @@ export class Snake implements Drawable {
         for (let i = 1; i <= tailLength; i++) {
             let offset = (tailLength - i) * cubeSize * this.grid.cellSize
             let prevOffset =
-                (tailLength - (i+1)) * cubeSize * this.grid.cellSize
+                (tailLength - (i + 1)) * cubeSize * this.grid.cellSize
 
             let x = spawnPosition.x + offset
             let px = spawnPosition.x + prevOffset
@@ -199,70 +201,66 @@ export class Snake implements Drawable {
         }
     }
 
+    setMovementInterval(window: Window) {
+        this.interval = window.setInterval(() => {
+            this.move()
+        }, this.speed)
+        return this
+    }
+
+    removeInterval(window: Window) {
+        if (this.interval) {
+            window.clearInterval(this.interval)
+        } else {
+            console.error('interval has not been set')
+        }
+    }
+
     /**
      * Move snake head in direction implied by given vector
      * Make each snake cube follow
      * @param vector
      * @returns Promise<Snake>
      */
-    move(vector: Vector = this.vector): Promise<Snake> {
+    move(vector: Vector = this.vector) {
 
-        //TODO: prevent illegal direction change
-        let moveExecutor = (resolve, reject) => {
-            /* TODO: find a neater way to do this using Array.shift maybe*/
+        /* TODO: find a neater way to do this using Array.shift maybe*/
+        this.head.prevPos = this.head.pos.clone()
 
-            this.head.prevPos = this.head.pos.clone()
+        let exceedsRightBoundary =
+            this.head.pos.x > this.grid.width - this.grid.cellSize
+        let exceedsLeftBoundary = this.head.pos.x < 0
+        let exceedsBottomBoundary =
+            this.head.pos.y > this.grid.height - this.grid.cellSize
+        let exceedsTopBoundary = this.head.pos.y < 0
 
-            let exceedsRightBoundary =
-                this.head.pos.x > this.grid.width - this.grid.cellSize
-            let exceedsLeftBoundary = this.head.pos.x < 0
-            let exceedsBottomBoundary =
-                this.head.pos.y > this.grid.height - this.grid.cellSize
-            let exceedsTopBoundary = this.head.pos.y < 0
-
-            if (exceedsRightBoundary) {
-                this.head.pos.x = 0
-            } else if (exceedsLeftBoundary) {
-                this.head.pos.x = this.grid.width - this.grid.cellSize
-            } else if (exceedsBottomBoundary) {
-                this.head.pos.y = 0
-            } else if (exceedsTopBoundary) {
-                this.head.pos.y = this.grid.height - this.grid.cellSize
-            } else {
-                this.head.pos.incr(vector.i * this.grid.cellSize,
-                    vector.j * this.grid.cellSize)
-            }
-
-            for (let idx = 1; idx < this.cubes.length; idx++) {
-                this.cubes[idx].prevPos = this.cubes[idx].pos.clone()
-                this.cubes[idx].pos = this.cubes[idx - 1].prevPos
-                if (this.cubes[idx].pos.equals(this.head.pos)) {
-                    reject({
-                        collisionIdx: idx,
-                        snake: this
-                    })
-                }
-            }
-
-            resolve(this)
+        if (exceedsRightBoundary) {
+            this.head.pos.x = 0
+        } else if (exceedsLeftBoundary) {
+            this.head.pos.x = this.grid.width - this.grid.cellSize
+        } else if (exceedsBottomBoundary) {
+            this.head.pos.y = 0
+        } else if (exceedsTopBoundary) {
+            this.head.pos.y = this.grid.height - this.grid.cellSize
+        } else {
+            this.head.pos.incr(vector.i * this.grid.cellSize,
+                vector.j * this.grid.cellSize)
         }
 
-        let snakeIsAlivePromise = new Promise<Snake>(moveExecutor)
+        for (let idx = 1; idx < this.cubes.length; idx++) {
+            this.cubes[idx].prevPos = this.cubes[idx].pos.clone()
+            this.cubes[idx].pos = this.cubes[idx - 1].prevPos
+            if (this.cubes[idx].pos.equals(this.head.pos)) {
+                this.cubes = this.cubes.slice(0, idx)
+            }
+        }
 
-        return snakeIsAlivePromise
 
     }
 
-    grow(cubes?:SnakeCube[]) {
+    grow(cubes?: SnakeCube[]) {
         let pos = this.cubes[this.cubes.length - 1].prevPos.clone()
-        /**
-         * FIXME: assigning default value cause gridpos cannot be null
-         * we can make [pos] and [prevPos] of type GridPos|null
-         * then they can be assigned to each other and be null too
-         * However, we will then have to check for null values
-         * when performing operations on them, which sucks
-         */
-        let prevPos = new GridPos(-1,-1)
+        let prevPos = new GridPos(-1, -1)
         let cube = new SnakeCube(pos, prevPos, Snake.DEFAULT_CUBE_SIZE)
         this.cubes.push(cube)
     }
@@ -303,8 +301,8 @@ export class SnakeCube implements Drawable {
 }
 
 export class Egg implements Drawable {
-    private static DEFAULT_COLOR:string = 'rgb(0, 0, 200)' // blue
-    private static DEFAULT_SIZE:number = 1
+    private static DEFAULT_COLOR: string = 'rgb(0, 0, 200)' // blue
+    private static DEFAULT_SIZE: number = 1
 
     private size: number
     private grid: Grid

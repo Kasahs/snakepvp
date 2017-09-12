@@ -4,12 +4,12 @@ import { Grid, GridPos, Snake, Egg } from "./snake"
 
 const keyDownRelayHandler = (e: KeyboardEvent) => {
     /* TODO ignore all non game keydowns */
-    let li = document.createElement('li')
+    /* let li = document.createElement('li')
     li.innerHTML = `sent:${e.code}`
     let ul: Element = <Element>document.querySelector('ul.actions')
     if (ul) {
         ul.appendChild(li)
-    }
+    } */
     net.emitClientControls(e)
     // TODO: doCanvasPaintForClient()
 }
@@ -17,13 +17,13 @@ const keyDownRelayHandler = (e: KeyboardEvent) => {
 
 const peerControlsHandler = (control: PlayerControl) => {
     // TODO doCanvasPaintForPeers();
-    let li = document.createElement('li')
+   /*  let li = document.createElement('li')
     li.innerHTML = `recieved:${control.name}`
     // FIXME redundant DOM selection
     let ul: Element | null = document.querySelector('ul.actions')
     if (ul) {
         ul.appendChild(li)
-    }
+    } */
 }
 
 
@@ -31,15 +31,40 @@ const peerConnectionHandler = (peers: string[]) => {
     console.log('peerConnectionHandler')
 }
 
-interface IntervalLoop {
+interface AnimationLoop {
     isOn: boolean
     start: (time?: any) => void
     stop: (cb?: () => any) => void
 }
 
+interface CollsionReport {
+    collisionHasOccurred: boolean
+    snakes: Snake[]
+    eggs?: Egg[]
+}
+
+let checkSnakeEggCollision = (snakes: Snake[],
+    eggs: Egg[], grid: Grid): CollsionReport => {
+
+    let collisionHasOccurred: boolean = false
+    snakes.forEach((snake) => {
+        for (let idx = 0; idx < eggs.length; idx++) {
+            if (eggs[idx].pos.equals(snake.head.pos)) {
+                collisionHasOccurred = true
+                eggs[idx] = new Egg(grid, grid.getRandomPos())
+                snake.grow()
+            }
+        }
+    })
+    return {
+        collisionHasOccurred,
+        snakes,
+        eggs
+    }
+}
 
 let getGameLoop = (grid: Grid,
-    snakes: Snake[], eggs: Egg[]): IntervalLoop => {
+    snakes: Snake[], eggs: Egg[]): AnimationLoop => {
 
     let stopLoop: boolean = false
     let isOn: boolean = false
@@ -48,6 +73,15 @@ let getGameLoop = (grid: Grid,
             isOn = true
             grid.saveContext()
             grid.clear()
+            let eggCollisionReport =
+                checkSnakeEggCollision(snakes, eggs, grid)
+
+            /* if (eggCollisionReport.collisionHasOccurred) {
+                snakes = eggCollisionReport.snakes
+                eggs = <Egg[]>eggCollisionReport.eggs
+            } */
+
+
             snakes.forEach((snake: Snake) => {
                 snake.draw()
             })
@@ -76,6 +110,12 @@ let getGameLoop = (grid: Grid,
     }
 }
 
+let addSnake = (grid: Grid, snakes: Snake[], spawnPos: GridPos) => {
+
+}
+
+
+
 let initGame = () => {
     let canvas = <HTMLCanvasElement>document.querySelector('.main-canvas')
     let grid = new Grid(canvas)
@@ -83,10 +123,10 @@ let initGame = () => {
     let snakes: Snake[] = []
     let eggs: Egg[] = []
 
-    let spawnPosition = new GridPos(0, 0)
-    let snake1: Snake = new Snake(grid, spawnPosition)
+    let snake: Snake = new Snake(grid, new GridPos(0, 0))
+    snakes.push(snake)
+
     let egg = new Egg(grid, grid.getRandomPos())
-    snakes.push(snake1)
     eggs.push(egg)
 
     let startGameBtn: Element | null =
@@ -100,9 +140,9 @@ let initGame = () => {
         let gameLoop = getGameLoop(grid, snakes, eggs)
         gameLoop.start()
 
-        let controlsHandler = Snake.getControlsHandler(snake1)
+        let controlsHandler = Snake.getControlsHandler(snakes[0])
         document
-            .addEventListener('keydown', (e:KeyboardEvent) => {
+            .addEventListener('keydown', (e: KeyboardEvent) => {
                 if (PlayerControl.isValidControl(e)) {
                     controlsHandler(new PlayerControl(e))
                 }
@@ -110,21 +150,9 @@ let initGame = () => {
         document.addEventListener('keydown', keyDownRelayHandler)
         //TODO: add peer controls handler
 
-        let snake1MoveInterval = window.setInterval(() => {
-            snake1.move().then((snake) => {
-
-
-                for (let i = 0; i < eggs.length; i++) {
-                    if (eggs[i].pos.equals(snake1.head.pos)) {
-                        snake1.grow()
-                        eggs[i] = new Egg(grid, grid.getRandomPos())
-                    }
-                }
-            }, () => {
-                gameLoop.stop()
-                window.clearInterval(snake1MoveInterval)
-            })
-        }, snake1.speed)
+        snakes.forEach((snake) => {
+            snake.setMovementInterval(window)
+        })
     })
 }
 
